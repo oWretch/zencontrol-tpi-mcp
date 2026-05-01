@@ -14,7 +14,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 from fastmcp import FastMCP
 
 from zencontrol_tpi_mcp.api.client import ZenControlTPI
@@ -22,6 +22,45 @@ from zencontrol_tpi_mcp.scope import ScopeConstraint
 from zencontrol_tpi_mcp.tools import register_all_tools
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# .env loading
+# ---------------------------------------------------------------------------
+
+
+def _load_runtime_dotenv() -> str | None:
+    """Load environment variables from .env using runtime-friendly lookup.
+
+    `uv run` (local source checkout) and `uvx` (published install) execute code
+    from different locations. Explicitly resolving `.env` from the current
+    working directory keeps behavior consistent across both modes.
+
+    Priority:
+      1. ``ZENCONTROL_ENV_FILE`` environment variable (explicit path)
+      2. ``.env`` in the current working directory
+      3. ``find_dotenv(usecwd=True)`` — walks up from CWD as a last resort
+    """
+    explicit_env_file = os.environ.get("ZENCONTROL_ENV_FILE", "").strip()
+    if explicit_env_file:
+        env_path = Path(explicit_env_file).expanduser()
+        if env_path.is_file():
+            load_dotenv(dotenv_path=env_path, override=False)
+            return str(env_path)
+        return None
+
+    cwd_env_file = Path.cwd() / ".env"
+    if cwd_env_file.is_file():
+        load_dotenv(dotenv_path=cwd_env_file, override=False)
+        return str(cwd_env_file)
+
+    discovered = find_dotenv(filename=".env", usecwd=True)
+    if discovered:
+        load_dotenv(dotenv_path=discovered, override=False)
+        return discovered
+
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Lifespan
@@ -100,6 +139,8 @@ def main() -> None:
     """Run the ZenControl TPI MCP server (stdio transport)."""
     import argparse
 
+    loaded_env_file = _load_runtime_dotenv()
+
     parser = argparse.ArgumentParser(description="ZenControl TPI MCP server")
     parser.add_argument(
         "--log-level",
@@ -107,24 +148,16 @@ def main() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging level (default: WARNING)",
     )
-    parser.add_argument(
-        "--env-file",
-        default=None,
-        metavar="PATH",
-        help="Path to .env file (default: .env in current working directory)",
-    )
     args = parser.parse_args()
-
-    # Load .env explicitly from CWD (or --env-file override) so behaviour is
-    # identical whether the server is run via `uv run` or installed via `uvx`.
-    env_path = Path(args.env_file) if args.env_file else Path.cwd() / ".env"
-    load_dotenv(dotenv_path=env_path)
 
     logging.basicConfig(
         level=getattr(logging, args.log_level),
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         stream=sys.stderr,
     )
+
+    if loaded_env_file:
+        logger.debug("Loaded environment variables from %s", loaded_env_file)
 
     server = create_server()
     server.run()
