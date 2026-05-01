@@ -35,6 +35,27 @@ PROFILE_SCHEDULED = 0xFFFF
 
 
 # ---------------------------------------------------------------------------
+# Address helpers
+# ---------------------------------------------------------------------------
+
+
+def ecd_wire(ecd_number: int) -> int:
+    """Convert an ECD short address (0–63) to its TPI wire format (64–127).
+
+    In the ZenControl TPI, DALI control devices (ECDs — sensors, buttons) are
+    addressed as 64 + short_address to distinguish them from control gear (ECGs,
+    addressed as 0–63). All ECD-specific commands must use this offset.
+    """
+    if not 0 <= ecd_number <= 63:
+        raise ValueError(f"ECD short address must be 0–63, got {ecd_number}")
+    return ecd_number + 64
+
+
+# Internal alias used throughout this module
+_ecd_wire = ecd_wire
+
+
+# ---------------------------------------------------------------------------
 # Helper utilities
 # ---------------------------------------------------------------------------
 
@@ -894,7 +915,7 @@ async def query_instances_by_address(tpi: ZenControlTPI, ecd_address: int) -> li
 
     Returns list of dicts with keys: number, type, active, error.
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_INSTANCES_BY_ADDRESS, address=ecd_address)
+    resp = await tpi.send_basic(command=TpiCommand.QUERY_INSTANCES_BY_ADDRESS, address=_ecd_wire(ecd_address))
     if resp.is_answer and len(resp.data) >= 4:
         instances = []
         for i in range(0, len(resp.data) - 3, 4):
@@ -922,7 +943,7 @@ async def query_dali_instance_label(
     """Query the label for a DALI ECD instance."""
     resp = await tpi.send_basic(
         command=TpiCommand.QUERY_DALI_INSTANCE_LABEL,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_lo=instance_number,
     )
     if resp.is_answer:
@@ -938,7 +959,7 @@ async def query_dali_instance_fitting_number(
     """Query the fitting number for a DALI ECD instance."""
     resp = await tpi.send_basic(
         command=TpiCommand.QUERY_DALI_INSTANCE_FITTING_NUMBER,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_lo=instance_number,
     )
     if resp.is_answer:
@@ -958,7 +979,7 @@ async def query_instance_groups(
     """
     resp = await tpi.send_basic(
         command=TpiCommand.QUERY_INSTANCE_GROUPS,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_lo=instance_number,
     )
     if resp.is_answer and len(resp.data) == 3:
@@ -982,7 +1003,7 @@ async def query_occupancy_instance_timers(
     """
     resp = await tpi.send_basic(
         command=TpiCommand.QUERY_OCCUPANCY_INSTANCE_TIMERS,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_lo=instance_number,
     )
     if resp.is_answer and len(resp.data) >= 5:
@@ -1093,7 +1114,7 @@ async def override_dali_button_led_state(
     state_byte = 0x02 if led_on else 0x01
     resp = await tpi.send_basic(
         command=TpiCommand.OVERRIDE_DALI_BUTTON_LED_STATE,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_mid=state_byte,
         data_lo=instance_number,
     )
@@ -1113,7 +1134,7 @@ async def query_last_known_dali_button_led_state(
     """
     resp = await tpi.send_basic(
         command=TpiCommand.QUERY_LAST_KNOWN_DALI_BUTTON_LED_STATE,
-        address=ecd_address,
+        address=_ecd_wire(ecd_address),
         data_lo=instance_number,
     )
     if resp.is_answer and len(resp.data) == 1:

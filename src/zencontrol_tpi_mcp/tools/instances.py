@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastmcp import Context, FastMCP
 
 from zencontrol_tpi_mcp.api import commands
+from zencontrol_tpi_mcp.api.commands import ecd_wire
 from zencontrol_tpi_mcp.models.schemas import InstanceType
 from zencontrol_tpi_mcp.tools._helpers import get_tpi
 
@@ -32,7 +33,7 @@ def register(mcp: FastMCP) -> None:
 
         lines = [f"## DALI Instances ({len(ecd_addresses)} devices)\n"]
         for ecd_addr in ecd_addresses:
-            label = await commands.query_dali_device_label(tpi, ecd_addr)
+            label = await commands.query_dali_device_label(tpi, ecd_wire(ecd_addr))
             instances = await commands.query_instances_by_address(tpi, ecd_addr)
             lines.append(f"### A{ecd_addr:02d} — {label or '(no label)'}")
             for inst in instances:
