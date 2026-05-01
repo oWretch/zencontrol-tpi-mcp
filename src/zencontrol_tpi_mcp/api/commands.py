@@ -254,7 +254,9 @@ async def query_group_membership_by_address(tpi: ZenControlTPI, ecg_address: int
 
     Response is 2 bytes: high byte = groups 8–15, low byte = groups 0–7.
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_GROUP_MEMBERSHIP_BY_ADDRESS, address=ecg_address)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_GROUP_MEMBERSHIP_BY_ADDRESS, address=ecg_address
+    )
     if resp.is_answer:
         return _parse_2byte_bitmask_high_low(resp.data)
     return []
@@ -349,7 +351,9 @@ async def query_dmx_device_by_number(tpi: ZenControlTPI, device_number: int) -> 
 
     Returns dict with keys: start_channel, stop_channel, or None on failure.
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_DMX_DEVICE_BY_NUMBER, address=device_number)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_DMX_DEVICE_BY_NUMBER, address=device_number
+    )
     if resp.is_answer and len(resp.data) >= 4:
         start_ch = (resp.data[0] << 8) | resp.data[1]
         stop_ch = (resp.data[2] << 8) | resp.data[3]
@@ -359,7 +363,9 @@ async def query_dmx_device_by_number(tpi: ZenControlTPI, device_number: int) -> 
 
 async def query_dmx_device_label(tpi: ZenControlTPI, device_number: int) -> str | None:
     """Query the label for a DMX device."""
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_DMX_DEVICE_LABEL_BY_NUMBER, address=device_number)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_DMX_DEVICE_LABEL_BY_NUMBER, address=device_number
+    )
     if resp.is_answer:
         return _decode_string(resp.data)
     return None
@@ -405,7 +411,12 @@ async def query_dali_colour_features(tpi: ZenControlTPI, ecg_address: int) -> di
             "rgbwaf_channels": (f & 0xE0) >> 5,
         }
     # Device absent / no colour capability
-    return {"supports_xy": False, "supports_tunable": False, "primary_count": 0, "rgbwaf_channels": 0}
+    return {
+        "supports_xy": False,
+        "supports_tunable": False,
+        "primary_count": 0,
+        "rgbwaf_channels": 0,
+    }
 
 
 async def query_dali_colour_temp_limits(tpi: ZenControlTPI, ecg_address: int) -> dict | None:
@@ -414,7 +425,9 @@ async def query_dali_colour_temp_limits(tpi: ZenControlTPI, ecg_address: int) ->
     Returns dict with keys: physical_warmest, physical_coolest, soft_warmest,
     soft_coolest, step_value (all in Kelvin), or None on failure.
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_DALI_COLOUR_TEMP_LIMITS, address=ecg_address)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_DALI_COLOUR_TEMP_LIMITS, address=ecg_address
+    )
     if resp.is_answer and len(resp.data) == 10:
         values = struct.unpack(">HHHHH", resp.data)
         return {
@@ -483,7 +496,9 @@ async def query_scene_label_for_group(tpi: ZenControlTPI, group: int, scene: int
 
 async def query_scene_numbers_by_address(tpi: ZenControlTPI, ecg_address: int) -> list[int]:
     """Return sorted list of scene numbers (0–11) for which an ECG has a level set."""
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_SCENE_NUMBERS_BY_ADDRESS, address=ecg_address)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_SCENE_NUMBERS_BY_ADDRESS, address=ecg_address
+    )
     if resp.is_answer:
         return sorted(resp.data)
     return []
@@ -494,7 +509,9 @@ async def query_scene_levels_by_address(tpi: ZenControlTPI, ecg_address: int) ->
 
     Returns a list of 16 entries; entries are None where no level is configured (0xFF).
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_SCENE_LEVELS_BY_ADDRESS, address=ecg_address)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_SCENE_LEVELS_BY_ADDRESS, address=ecg_address
+    )
     if resp.is_answer:
         return [None if b == 0xFF else b for b in resp.data]
     return [None] * 16
@@ -690,7 +707,9 @@ async def dali_query_last_scene(tpi: ZenControlTPI, address: int) -> int | None:
 
 async def dali_query_last_scene_is_current(tpi: ZenControlTPI, address: int) -> bool | None:
     """Return True if the last recalled scene is still the active state."""
-    resp = await tpi.send_basic(command=TpiCommand.DALI_QUERY_LAST_SCENE_IS_CURRENT, address=address)
+    resp = await tpi.send_basic(
+        command=TpiCommand.DALI_QUERY_LAST_SCENE_IS_CURRENT, address=address
+    )
     if resp.is_answer and resp.data:
         return bool(resp.data[0])
     if resp.is_ok:
@@ -809,7 +828,9 @@ async def query_profile_label(tpi: ZenControlTPI, profile: int) -> str | None:
     """Query the label for a profile number (0–65534)."""
     hi = (profile >> 8) & 0xFF
     lo = profile & 0xFF
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_PROFILE_LABEL, address=0, data_mid=hi, data_lo=lo)
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_PROFILE_LABEL, address=0, data_mid=hi, data_lo=lo
+    )
     if resp.is_answer:
         return _decode_string(resp.data)
     return None
@@ -844,8 +865,12 @@ async def query_profile_information(tpi: ZenControlTPI) -> dict | None:
         state = {
             "current_active_profile": unpacked[0],
             "last_scheduled_profile": unpacked[1],
-            "last_overridden_utc": datetime.fromtimestamp(unpacked[2]).isoformat() if unpacked[2] else None,
-            "last_scheduled_utc": datetime.fromtimestamp(unpacked[3]).isoformat() if unpacked[3] else None,
+            "last_overridden_utc": datetime.fromtimestamp(unpacked[2]).isoformat()
+            if unpacked[2]
+            else None,
+            "last_scheduled_utc": datetime.fromtimestamp(unpacked[3]).isoformat()
+            if unpacked[3]
+            else None,
         }
         profiles: dict[int, dict] = {}
         for i in range(12, len(resp.data) - 2, 3):
@@ -915,7 +940,9 @@ async def query_instances_by_address(tpi: ZenControlTPI, ecd_address: int) -> li
 
     Returns list of dicts with keys: number, type, active, error.
     """
-    resp = await tpi.send_basic(command=TpiCommand.QUERY_INSTANCES_BY_ADDRESS, address=_ecd_wire(ecd_address))
+    resp = await tpi.send_basic(
+        command=TpiCommand.QUERY_INSTANCES_BY_ADDRESS, address=_ecd_wire(ecd_address)
+    )
     if resp.is_answer and len(resp.data) >= 4:
         instances = []
         for i in range(0, len(resp.data) - 3, 4):

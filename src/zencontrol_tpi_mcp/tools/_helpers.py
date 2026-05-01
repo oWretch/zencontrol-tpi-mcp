@@ -40,7 +40,11 @@ async def confirm_broad_command(ctx: Context, description: str) -> bool:
                 f"{description}\n\n"
                 "This will affect all lights/devices in scope. Do you want to proceed?"
             ),
-            schema={"type": "object", "properties": {"confirm": {"type": "boolean"}}, "required": ["confirm"]},
+            schema={
+                "type": "object",
+                "properties": {"confirm": {"type": "boolean"}},
+                "required": ["confirm"],
+            },
         )
         if result.action == "accept" and result.data:
             return bool(result.data.get("confirm", False))
@@ -70,8 +74,7 @@ def colour_label(colour_type: object, colour_info: object | None) -> str:
     if colour_info.colour_type == DaliColourType.XY:
         return f"XY ({colour_info.x}, {colour_info.y})"
     if colour_info.colour_type == DaliColourType.RGBWAF:
-        return (
-            f"RGB ({colour_info.red},{colour_info.green},{colour_info.blue})"
-            + (f" W={colour_info.white}" if colour_info.white else "")
+        return f"RGB ({colour_info.red},{colour_info.green},{colour_info.blue})" + (
+            f" W={colour_info.white}" if colour_info.white else ""
         )
     return "unknown"

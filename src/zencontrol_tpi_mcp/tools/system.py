@@ -105,7 +105,9 @@ def register(mcp: FastMCP) -> None:
         if not 0 <= ecd_address <= 63:
             return f"❌ Invalid ECD address {ecd_address}. Must be 0–63."
         tpi = get_tpi(ctx)
-        success = await commands.override_dali_button_led_state(tpi, ecd_address, instance_number, led_on)
+        success = await commands.override_dali_button_led_state(
+            tpi, ecd_address, instance_number, led_on
+        )
         state_str = "on" if led_on else "off"
         if success:
             return f"✓ A{ecd_address:02d} instance {instance_number} LED turned {state_str}."
@@ -132,7 +134,9 @@ def register(mcp: FastMCP) -> None:
         if not 0 <= ecd_address <= 63:
             return f"❌ Invalid ECD address {ecd_address}. Must be 0–63."
         tpi = get_tpi(ctx)
-        state = await commands.query_last_known_dali_button_led_state(tpi, ecd_address, instance_number)
+        state = await commands.query_last_known_dali_button_led_state(
+            tpi, ecd_address, instance_number
+        )
         if state is None:
             return f"A{ecd_address:02d} instance {instance_number}: LED state unknown."
         return f"A{ecd_address:02d} instance {instance_number}: LED is {'on' if state else 'off'}."

@@ -140,11 +140,17 @@ def register(mcp: FastMCP) -> None:
         if features["supports_tunable"]:
             limits = await commands.query_dali_colour_temp_limits(tpi, ecg_address)
             if limits:
-                lines.append(f"- **Physical range:** {limits['physical_coolest']}K – {limits['physical_warmest']}K")
-                lines.append(f"- **Configured range:** {limits['soft_coolest']}K – {limits['soft_warmest']}K")
+                lines.append(
+                    f"- **Physical range:** {limits['physical_coolest']}K – {limits['physical_warmest']}K"
+                )
+                lines.append(
+                    f"- **Configured range:** {limits['soft_coolest']}K – {limits['soft_warmest']}K"
+                )
                 lines.append(f"- **Step value:** {limits['step_value']}K")
 
-        if not any([features["supports_tunable"], features["supports_xy"], features["rgbwaf_channels"]]):
+        if not any(
+            [features["supports_tunable"], features["supports_xy"], features["rgbwaf_channels"]]
+        ):
             lines.append("\n*(No colour control capability detected)*")
 
         return "\n".join(lines)

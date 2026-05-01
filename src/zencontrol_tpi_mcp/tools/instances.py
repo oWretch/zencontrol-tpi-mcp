@@ -38,8 +38,12 @@ def register(mcp: FastMCP) -> None:
             lines.append(f"### A{ecd_addr:02d} — {label or '(no label)'}")
             for inst in instances:
                 inst_label = await commands.query_dali_instance_label(tpi, ecd_addr, inst["number"])
-                inst_fitting = await commands.query_dali_instance_fitting_number(tpi, ecd_addr, inst["number"])
-                type_name = inst["type"].name if isinstance(inst["type"], InstanceType) else "Unknown"
+                inst_fitting = await commands.query_dali_instance_fitting_number(
+                    tpi, ecd_addr, inst["number"]
+                )
+                type_name = (
+                    inst["type"].name if isinstance(inst["type"], InstanceType) else "Unknown"
+                )
                 status_parts = []
                 if inst.get("active"):
                     status_parts.append("active")
@@ -102,7 +106,9 @@ def register(mcp: FastMCP) -> None:
         tpi = get_tpi(ctx)
         timers = await commands.query_occupancy_instance_timers(tpi, ecd_address, instance_number)
         if timers is None:
-            return f"A{ecd_address:02d} instance {instance_number}: occupancy timer data unavailable."
+            return (
+                f"A{ecd_address:02d} instance {instance_number}: occupancy timer data unavailable."
+            )
 
         last = timers["last_detect"]
         last_str = f"{last} seconds ago" if last < 65535 else "never (or >65535s)"

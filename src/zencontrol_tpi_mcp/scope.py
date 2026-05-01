@@ -84,17 +84,13 @@ class ScopeConstraint:
             locked_addr = DaliAddress.for_group(self.group_number)
             if address != locked_addr:
                 target_group = DaliAddress.from_group_address(address)
-                return (
-                    f"Group {target_group} address is not allowed while scope is locked to group {self.group_number}."
-                )
+                return f"Group {target_group} address is not allowed while scope is locked to group {self.group_number}."
             return None
 
         # ECG address (0–63): check membership if provided
         if 0 <= address <= 63:
             if member_groups is not None and self.group_number not in member_groups:
-                return (
-                    f"ECG address {address} is not a member of scope group {self.group_number}."
-                )
+                return f"ECG address {address} is not a member of scope group {self.group_number}."
             return None
 
         return f"Unrecognised DALI address {address}."

@@ -12,6 +12,7 @@ import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastmcp import FastMCP
@@ -30,8 +31,6 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def _lifespan(app: FastMCP) -> AsyncIterator[dict]:  # type: ignore[type-arg]
     """Connect to the TPI controller and verify startup readiness."""
-    load_dotenv()
-
     host = os.environ.get("ZENCONTROL_TPI_HOST", "").strip()
     if not host:
         logger.error("ZENCONTROL_TPI_HOST is not set. Set it in .env or the environment.")
@@ -108,7 +107,18 @@ def main() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging level (default: WARNING)",
     )
+    parser.add_argument(
+        "--env-file",
+        default=None,
+        metavar="PATH",
+        help="Path to .env file (default: .env in current working directory)",
+    )
     args = parser.parse_args()
+
+    # Load .env explicitly from CWD (or --env-file override) so behaviour is
+    # identical whether the server is run via `uv run` or installed via `uvx`.
+    env_path = Path(args.env_file) if args.env_file else Path.cwd() / ".env"
+    load_dotenv(dotenv_path=env_path)
 
     logging.basicConfig(
         level=getattr(logging, args.log_level),

@@ -129,9 +129,15 @@ def register(mcp: FastMCP) -> None:
         if not types:
             return f"A{ecg_address:02d}: device type information unavailable."
         type_names = {
-            0: "Fluorescent", 1: "Emergency lighting", 2: "HID discharge",
-            3: "Low-voltage halogen", 4: "Incandescent", 5: "DC control gear",
-            6: "LED", 7: "Relay", 8: "Colour control",
+            0: "Fluorescent",
+            1: "Emergency lighting",
+            2: "HID discharge",
+            3: "Low-voltage halogen",
+            4: "Incandescent",
+            5: "DC control gear",
+            6: "LED",
+            7: "Relay",
+            8: "Colour control",
         }
         type_strs = [type_names.get(t, f"Type {t}") for t in types]
         return f"A{ecg_address:02d}: {', '.join(type_strs)}"

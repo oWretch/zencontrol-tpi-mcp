@@ -238,7 +238,9 @@ def register(mcp: FastMCP) -> None:
             return f"❌ Invalid DMX parameters: {exc}"
 
         if success:
-            return f"✓ DMX fade sent to universe {universe} channels {start_channel}–{stop_channel}."
+            return (
+                f"✓ DMX fade sent to universe {universe} channels {start_channel}–{stop_channel}."
+            )
         return "✗ Controller did not acknowledge DMX command."
 
     @mcp.tool()

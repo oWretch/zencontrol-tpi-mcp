@@ -88,7 +88,11 @@ def register(mcp: FastMCP) -> None:
         if not 0 <= profile_number <= PROFILE_SCHEDULED:
             return f"❌ Invalid profile number {profile_number}. Must be 0–65535."
 
-        label = await commands.query_profile_label(tpi, profile_number) if profile_number != PROFILE_SCHEDULED else None
+        label = (
+            await commands.query_profile_label(tpi, profile_number)
+            if profile_number != PROFILE_SCHEDULED
+            else None
+        )
         profile_desc = (
             "the scheduled (automatic) profile"
             if profile_number == PROFILE_SCHEDULED

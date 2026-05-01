@@ -60,7 +60,9 @@ def register(mcp: FastMCP) -> None:
         lines = [f"## Scene Levels — A{ecg_address:02d} {label or ''}"]
         for snum in scene_numbers:
             level = levels[snum] if snum < len(levels) else None
-            level_str = f"{level} ({round(level / 254 * 100)}%)" if level is not None else "mask (0xFF)"
+            level_str = (
+                f"{level} ({round(level / 254 * 100)}%)" if level is not None else "mask (0xFF)"
+            )
             lines.append(f"- **Scene {snum}:** {level_str}")
 
         return "\n".join(lines)

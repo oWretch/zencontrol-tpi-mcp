@@ -45,10 +45,7 @@ def register_resources(mcp: FastMCP) -> None:
         status = await commands.query_group_by_number(tpi, g)
         scenes = await commands.query_scene_numbers_for_group(tpi, g)
         level = status["level"] if status else None
-        return (
-            f"group={g}, label={label!r}, level={level}, "
-            f"scenes={scenes}"
-        )
+        return f"group={g}, label={label!r}, level={level}, scenes={scenes}"
 
     @mcp.resource("zencontrol-tpi://devices")
     async def devices_resource(ctx: Context) -> str:
@@ -84,7 +81,9 @@ def register_resources(mcp: FastMCP) -> None:
         lines = [f"current_active_profile={current}"]
         for pnum, pdata in sorted(info["profiles"].items()):
             label = await commands.query_profile_label(tpi, pnum)
-            lines.append(f"profile={pnum}, label={label!r}, enabled={pdata['enabled']}, priority={pdata['priority_label']}")
+            lines.append(
+                f"profile={pnum}, label={label!r}, enabled={pdata['enabled']}, priority={pdata['priority_label']}"
+            )
         return "\n".join(lines)
 
     @mcp.resource("zencontrol-tpi://dmx")
@@ -96,6 +95,8 @@ def register_resources(mcp: FastMCP) -> None:
         for num in device_numbers:
             label = await commands.query_dmx_device_label(tpi, num)
             channels = await commands.query_dmx_device_by_number(tpi, num)
-            ch_str = f"{channels['start_channel']}-{channels['stop_channel']}" if channels else "unknown"
+            ch_str = (
+                f"{channels['start_channel']}-{channels['stop_channel']}" if channels else "unknown"
+            )
             lines.append(f"number={num}, label={label!r}, channels={ch_str}")
         return "\n".join(lines) if lines else "No DMX devices found."
