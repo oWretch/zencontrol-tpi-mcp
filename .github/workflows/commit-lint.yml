@@ -1,0 +1,36 @@
+name: Commit Lint
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install conventional-pre-commit
+        run: pip install conventional-pre-commit==4.4.0
+
+      - name: Validate PR commit messages
+        run: |
+          git log --format="%H" "origin/${{ github.base_ref }}..HEAD" | \
+          while IFS= read -r sha; do
+            git log --format="%B" -n 1 "$sha" > /tmp/commit_msg
+            conventional-pre-commit \
+              --scopes api,tools,models,scope,resources,docs,chore,ci,deps,release,tests \
+              build chore ci docs feat fix perf refactor revert style test \
+              /tmp/commit_msg || {
+                echo "❌ Invalid commit message in $sha:"
+                git log --format="%s" -n 1 "$sha"
+                exit 1
+              }
+          done
