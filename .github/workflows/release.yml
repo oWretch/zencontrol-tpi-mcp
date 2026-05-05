@@ -31,16 +31,12 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Run semantic-release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          uv run semantic-release version --no-push --no-changelog
+          uv run semantic-release version --no-commit --no-tag --no-push --no-changelog
+          # Prints the version that was bumped (if any)
 
       - name: Check if version changed
         id: version_check
@@ -53,7 +49,50 @@ jobs:
 
       - name: Update uv.lock for release
         if: steps.version_check.outputs.changed == 'true'
-        run: uv lock
+        run: |
+          uv lock
+
+      - name: Compute release metadata
+        if: steps.version_check.outputs.changed == 'true'
+        id: release_meta
+        run: |
+          VERSION=$(python - <<'PY'
+          import tomllib
+          from pathlib import Path
+
+          data = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+          print(data["project"]["version"])
+          PY
+          )
+          TAG="v${VERSION}"
+          COMMIT_MESSAGE="chore(release): ${VERSION}"
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "commit_message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub App token (optional)
+        if: steps.version_check.outputs.changed == 'true' && vars.APP_CLIENT_ID != ''
+        id: app_token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          client-id: ${{ vars.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Resolve release token
+        if: steps.version_check.outputs.changed == 'true'
+        id: release_token
+        run: |
+          if [ -n "${{ steps.app_token.outputs.token }}" ]; then
+            TOKEN="${{ steps.app_token.outputs.token }}"
+            echo "Using GitHub App token for release commit"
+          else
+            TOKEN="${{ github.token }}"
+            echo "Using default github.token for release commit"
+          fi
+
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Build distribution
         if: steps.version_check.outputs.changed == 'true'
@@ -63,21 +102,34 @@ jobs:
         if: steps.version_check.outputs.changed == 'true'
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
 
-      - name: Push commits and tags
+      - name: Create signed release commit and tag
         if: steps.version_check.outputs.changed == 'true'
-        run: |
-          git push origin main
-          git push origin --tags
+        id: signed_release
+        uses: oWretch/create-verified-commits@14dc164a60636d571258c5237e35de35c5930a08 # v1.0.1
+        with:
+          token: ${{ steps.release_token.outputs.token }}
+          commit-message: ${{ steps.release_meta.outputs.commit_message }}
+          tag-name: ${{ steps.release_meta.outputs.tag }}
+          tag-message: Release ${{ steps.release_meta.outputs.tag }}
+          fail-on-empty: false
+          files: |
+            pyproject.toml
+            src/zencontrol_tpi_mcp/__init__.py
+            uv.lock
 
       - name: Create GitHub Release (immutable, as draft)
         if: steps.version_check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG=$(git describe --tags --abbrev=0)
+          TAG="${{ steps.release_meta.outputs.tag }}"
+
+          # Check if release already exists
           if gh release view "$TAG" > /dev/null 2>&1; then
             echo "Release $TAG already exists"
           else
+            # Create release as DRAFT with assets
+            # This allows all assets to be attached before release becomes immutable
             gh release create "$TAG" \
               --draft \
               --title "$TAG" \
@@ -91,7 +143,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG=$(git describe --tags --abbrev=0)
+          TAG="${{ steps.release_meta.outputs.tag }}"
+
+          # Publish the draft release to make it immutable
+          # (Only if not already published)
           if gh release view "$TAG" --json isDraft -q '.isDraft' 2>/dev/null | grep -q true; then
             gh release edit "$TAG" --draft=false --latest
             echo "Published immutable release: $TAG"
