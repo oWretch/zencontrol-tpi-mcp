@@ -18,6 +18,7 @@ from dotenv import find_dotenv, load_dotenv
 from fastmcp import FastMCP
 
 from zencontrol_tpi_mcp.api.client import ZenControlTPI
+from zencontrol_tpi_mcp.resources.hierarchy import register_resources
 from zencontrol_tpi_mcp.scope import ScopeConstraint
 from zencontrol_tpi_mcp.tools import register_all_tools
 
@@ -132,6 +133,7 @@ def create_server() -> FastMCP:
         lifespan=_lifespan,
     )
     register_all_tools(mcp)
+    register_resources(mcp)
     return mcp
 
 

@@ -5,7 +5,29 @@ from __future__ import annotations
 from fastmcp import Context, FastMCP
 
 from zencontrol_tpi_mcp.api import commands
+from zencontrol_tpi_mcp.api.commands import ecd_wire
+from zencontrol_tpi_mcp.models.schemas import InstanceType
 from zencontrol_tpi_mcp.tools._helpers import get_tpi
+
+
+async def _format_ecd_instances(tpi, ecd_addr: int) -> list[str]:  # type: ignore[no-untyped-def]
+    label = await commands.query_dali_device_label(tpi, ecd_wire(ecd_addr))
+    instances = await commands.query_instances_by_address(tpi, ecd_addr)
+    lines = [f"ecd_address={ecd_addr}, label={label!r}"]
+    for inst in instances:
+        inst_label = await commands.query_dali_instance_label(tpi, ecd_addr, inst["number"])
+        inst_fitting = await commands.query_dali_instance_fitting_number(
+            tpi, ecd_addr, inst["number"]
+        )
+        groups = await commands.query_instance_groups(tpi, ecd_addr, inst["number"])
+        type_name = inst["type"].name if isinstance(inst["type"], InstanceType) else "Unknown"
+        lines.append(
+            "  "
+            f"instance={inst['number']}, type={type_name}, active={inst.get('active')}, "
+            f"error={inst.get('error')}, label={inst_label!r}, fitting={inst_fitting!r}, "
+            f"groups={groups}"
+        )
+    return lines
 
 
 def register_resources(mcp: FastMCP) -> None:
@@ -57,6 +79,30 @@ def register_resources(mcp: FastMCP) -> None:
             label = await commands.query_dali_device_label(tpi, addr)
             lines.append(f"address={addr}, label={label!r}")
         return "\n".join(lines) if lines else "No DALI control gear found."
+
+    @mcp.resource("zencontrol-tpi://instances")
+    async def instances_resource(ctx: Context) -> str:
+        """All DALI ECD devices with sensor/button instances, labels, and groups."""
+        tpi = get_tpi(ctx)
+        ecd_addresses = await commands.query_dali_addresses_with_instances(tpi, start_address=0)
+        ecd_addresses += await commands.query_dali_addresses_with_instances(tpi, start_address=60)
+        ecd_addresses = sorted(set(ecd_addresses))
+        if not ecd_addresses:
+            return "No DALI ECD devices with instances found."
+
+        lines = []
+        for ecd_addr in ecd_addresses:
+            lines.extend(await _format_ecd_instances(tpi, ecd_addr))
+        return "\n".join(lines)
+
+    @mcp.resource("zencontrol-tpi://instances/{ecd_address}")
+    async def instance_device_resource(ctx: Context, ecd_address: str) -> str:
+        """Instances for one DALI ECD address, including sensor type and group targets."""
+        tpi = get_tpi(ctx)
+        ecd_addr = int(ecd_address)
+        if not 0 <= ecd_addr <= 63:
+            return f"Invalid ECD address {ecd_addr}. Must be 0-63."
+        return "\n".join(await _format_ecd_instances(tpi, ecd_addr))
 
     @mcp.resource("zencontrol-tpi://scenes/{group_number}")
     async def scenes_resource(ctx: Context, group_number: str) -> str:
