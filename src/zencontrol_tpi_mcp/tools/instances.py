@@ -19,8 +19,15 @@ def register(mcp: FastMCP) -> None:
         associated input instances (buttons, occupancy sensors, light sensors, etc.)
         and returns their configuration.
 
+        Use this to find named sensors such as "Deck Far Sensor" and identify
+        the ECD address plus instance number needed by instance-specific tools.
+
         Returns:
             A list of devices with their instances, types, and labels.
+
+        Example:
+            If this returns "A03 - Deck Far Sensor" with "Instance 0 (OCCUPANCY_SENSOR)",
+            call query_occupancy_timers with ecd_address=3 and instance_number=0.
         """
         tpi = get_tpi(ctx)
         # Query in two passes to cover all 64 possible addresses
@@ -71,6 +78,9 @@ def register(mcp: FastMCP) -> None:
         Virtual instances can be triggered programmatically to activate
         automation rules and scenes.
 
+        Use this before trigger_virtual_instance to find valid virtual instance
+        numbers and their instance types.
+
         Returns:
             A list of virtual instances with their numbers and types.
         """
@@ -94,12 +104,19 @@ def register(mcp: FastMCP) -> None:
     ) -> str:
         """Query occupancy sensor timer configuration for a DALI ECD instance.
 
+        Use after list_instances identifies an OCCUPANCY_SENSOR instance.
+        Returns timer configuration and recent occupancy age; it does not report
+        a live occupied/unoccupied boolean directly.
+
         Args:
             ecd_address: DALI ECD short address (0–63).
             instance_number: Instance number.
 
         Returns:
             Deadtime, hold time, report time, and seconds since last occupancy event.
+
+        Example:
+            Deck Far Sensor at A03 instance 0 -> ecd_address=3, instance_number=0.
         """
         if not 0 <= ecd_address <= 63:
             return f"Invalid ECD address {ecd_address}. Must be 0–63."

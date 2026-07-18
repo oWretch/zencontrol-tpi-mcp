@@ -13,6 +13,9 @@ def register(mcp: FastMCP) -> None:
     async def query_level(ctx: Context, address: int) -> str:
         """Query the current arc level on a DALI address (ECG or group).
 
+        Use ECG addresses 0–63 for individual fixtures or group addresses 64–79
+        for DALI groups. For example, group 2 is address 66.
+
         Args:
             address: DALI address byte. ECG 0–63, group 64–79.
 
@@ -27,6 +30,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def query_device_status(ctx: Context, address: int) -> str:
         """Query DALI status flags for an address (ECG or group).
+
+        Use this for fixture health diagnostics such as lamp failure, control
+        gear failure, fade running, reset state, or power failure.
 
         Args:
             address: DALI address byte. ECG 0–63, group 64–79, broadcast 127/255.
@@ -66,6 +72,9 @@ def register(mcp: FastMCP) -> None:
     async def query_colour(ctx: Context, address: int) -> str:
         """Query the current colour state of a DALI ECG address.
 
+        Use get_device_colour_capabilities first if you do not know whether the
+        fixture supports tunable white, XY, or RGBWAF colour.
+
         Args:
             address: DALI ECG short address (0–63).
 
@@ -82,6 +91,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def query_last_scene(ctx: Context, address: int) -> str:
         """Query the last recalled scene number for a DALI address.
+
+        Use this to determine which scene was most recently recalled for a
+        fixture, group, or broadcast address and whether it is still active.
 
         Args:
             address: DALI address byte. ECG 0–63, group 64–79, broadcast 127/255.
@@ -102,6 +114,8 @@ def register(mcp: FastMCP) -> None:
     async def query_dmx_level(ctx: Context, channel: int) -> str:
         """Query the current level on a DMX channel.
 
+        Use list_dmx_devices first to discover configured DMX channel ranges.
+
         Args:
             channel: DMX channel number.
 
@@ -117,6 +131,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def query_device_type(ctx: Context, ecg_address: int) -> str:
         """Query the device type bitmask for a DALI ECG.
+
+        Use this to identify fixture capability categories such as LED, relay,
+        emergency lighting, or colour control.
 
         Args:
             ecg_address: DALI short address (0–63).
@@ -145,6 +162,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def query_level_limits(ctx: Context, ecg_address: int) -> str:
         """Query the min/max level limits and fade state for a DALI ECG.
+
+        Use this when checking a fixture's configured dimming range or whether a
+        fade is currently running.
 
         Args:
             ecg_address: DALI short address (0–63).

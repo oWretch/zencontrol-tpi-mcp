@@ -16,6 +16,8 @@ def register(mcp: FastMCP) -> None:
 
         System variables (0–147) are user-programmable values that can be used
         in ZenControl automation rules and scenes.
+        Use list_system_variables to discover named variables before reading one
+        by index.
 
         Args:
             variable_index: System variable index (0–147).
@@ -40,6 +42,9 @@ def register(mcp: FastMCP) -> None:
     ) -> str:
         """Set a system variable to a new value.
 
+        This changes controller automation state. Use get_system_variable first
+        if you need to inspect the current name/value before writing.
+
         Args:
             variable_index: System variable index (0–147).
             value: Signed 16-bit integer value (-32768–32767).
@@ -63,6 +68,7 @@ def register(mcp: FastMCP) -> None:
         """List all named system variables with their current values.
 
         Queries all 148 system variables and returns those that have names set.
+        Unnamed variables are omitted from the result.
 
         Returns:
             A list of named system variables with index, name, and value.
@@ -93,6 +99,7 @@ def register(mcp: FastMCP) -> None:
 
         Note: This only works when the controller or TPI is managing the button
         LED state. In many configurations, the control device manages its own LED.
+        This changes the controller's requested LED state.
 
         Args:
             ecd_address: DALI ECD short address (0–63).
@@ -123,6 +130,7 @@ def register(mcp: FastMCP) -> None:
 
         Note: This reflects the controller's last known state, which may differ
         from the physical LED state if the device manages its own LEDs.
+        Use list_instances first to find push button ECD addresses and instance numbers.
 
         Args:
             ecd_address: DALI ECD short address (0–63).

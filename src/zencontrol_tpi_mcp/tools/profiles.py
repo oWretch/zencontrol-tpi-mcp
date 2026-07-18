@@ -14,6 +14,9 @@ def register(mcp: FastMCP) -> None:
     async def list_profiles(ctx: Context) -> str:
         """List all configured profiles with numbers, labels, and status.
 
+        Use this to inspect scheduled/override lighting profiles before deciding
+        whether to call change_profile.
+
         Returns the active profile, a list of all available profiles, their
         enabled/disabled state and priority level.
         """
@@ -54,6 +57,8 @@ def register(mcp: FastMCP) -> None:
     async def get_current_profile(ctx: Context) -> str:
         """Get the currently active profile number and label.
 
+        Use this when you only need the active profile, not the full profile list.
+
         Returns:
             Active profile number and label.
         """
@@ -73,6 +78,7 @@ def register(mcp: FastMCP) -> None:
 
         Profiles control scheduled lighting scenes and behaviours across the
         entire controller. Activating a profile affects all connected devices.
+        This tool requests confirmation before sending the controller-wide change.
 
         Use profile_number 65535 to return to the scheduled (automatic) profile.
 

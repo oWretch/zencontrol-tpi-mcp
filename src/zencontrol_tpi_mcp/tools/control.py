@@ -38,6 +38,10 @@ def register(mcp: FastMCP) -> None:
     ) -> str:
         """Send a DALI command to an address (ECG, group, or broadcast).
 
+        This changes lighting state. Use get_scope before broad commands, and
+        use list_dali_devices/list_groups to resolve the target address first.
+        Broadcast addresses request confirmation before sending.
+
         Args:
             action: The DALI command to send. Options:
                 - arc_level: Fade to a specific level (requires `level` 0–254).
@@ -141,6 +145,10 @@ def register(mcp: FastMCP) -> None:
     ) -> str:
         """Set the colour of a DALI address with an optional arc level.
 
+        This changes fixture colour and optionally brightness. Use
+        get_device_colour_capabilities first to confirm the target supports the
+        requested colour mode.
+
         Args:
             address: DALI address byte. ECG 0–63, group 64–79, broadcast 127/255.
             colour_type: Colour mode — "tc" (tunable white), "xy", or "rgbwaf".
@@ -211,6 +219,9 @@ def register(mcp: FastMCP) -> None:
     ) -> str:
         """Send a DMX channel fade command.
 
+        This changes DMX output levels. Use list_dmx_devices first to discover
+        configured channel ranges.
+
         Args:
             universe: DMX universe number (1-indexed; use 1 for the first universe).
             start_channel: Starting DMX channel (1-indexed).
@@ -253,6 +264,7 @@ def register(mcp: FastMCP) -> None:
 
         This temporarily overrides sensor-driven behaviour (e.g., occupancy sensors
         turning lights on or off) for the specified duration.
+        Use 0 seconds to clear an existing inhibit.
 
         Args:
             address: DALI address byte. ECG 0–63, group 64–79, broadcast 127/255.
@@ -286,6 +298,8 @@ def register(mcp: FastMCP) -> None:
 
         Virtual instances allow automation rules and scenes to be activated
         programmatically without requiring a physical button press.
+        This may run controller automation; use list_virtual_instances first to
+        find valid virtual instance numbers.
 
         Args:
             instance_number: Virtual instance number.

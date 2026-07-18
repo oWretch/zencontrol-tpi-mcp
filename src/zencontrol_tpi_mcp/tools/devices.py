@@ -13,6 +13,10 @@ def register(mcp: FastMCP) -> None:
     async def list_dali_devices(ctx: Context) -> str:
         """List all DALI control gear (ECG) devices with labels and fitting numbers.
 
+        Use this for controllable lighting loads/fixtures, not sensors or wall
+        switches. For sensors, buttons, and other DALI control devices (ECDs),
+        use list_instances.
+
         Returns a table of DALI devices that are configured in the controller database.
         Each entry includes the short address, label, fitting number, and group memberships.
         """
@@ -37,6 +41,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def list_groups(ctx: Context) -> str:
         """List all configured DALI groups with labels and current levels.
+
+        Use this to translate group numbers into room/area names before querying
+        or controlling a group. DALI group addresses are 64 + group number.
 
         Returns a table of DALI groups including group number, label,
         current arc level, and occupancy status.
@@ -64,6 +71,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def get_group_info(ctx: Context, group_number: int) -> str:
         """Get detailed information about a specific DALI group.
+
+        Use after list_groups when you need one group's label, current level,
+        occupancy state, and configured scene numbers.
 
         Args:
             group_number: DALI group number (0–15).
@@ -95,7 +105,9 @@ def register(mcp: FastMCP) -> None:
     async def list_dmx_devices(ctx: Context) -> str:
         """List all DMX devices with labels and channel assignments.
 
-        Returns a table of DMX devices configured in the ZenControl system.
+        Use this before querying or controlling DMX channels. Returns a table of
+        configured DMX devices, including device number, label, and start/stop
+        channels, or a message that no DMX devices are configured.
         """
         tpi = get_tpi(ctx)
         device_numbers = await commands.query_dmx_device_numbers(tpi)
@@ -118,6 +130,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def get_device_colour_capabilities(ctx: Context, ecg_address: int) -> str:
         """Get colour capability information for a DALI control gear device.
+
+        Use this before query_colour or set_dali_colour to determine whether an
+        ECG supports tunable white, XY chromaticity, or RGBWAF colour channels.
 
         Args:
             ecg_address: DALI short address (0–63).

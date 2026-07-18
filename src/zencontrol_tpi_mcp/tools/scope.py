@@ -14,6 +14,8 @@ def register(mcp: FastMCP) -> None:
 
         When a scope is active, commands to other groups, individual devices not
         in this group, or broadcast addresses will be rejected.
+        This affects subsequent tool calls in the MCP server session; it does not
+        change controller configuration.
 
         Args:
             group_number: DALI group number (0–15) to lock scope to.
@@ -32,6 +34,9 @@ def register(mcp: FastMCP) -> None:
     async def get_scope(ctx: Context) -> str:
         """Show the current scope constraint.
 
+        Use this before sending broad or state-changing commands to confirm
+        whether the MCP server is restricted to a DALI group.
+
         Returns:
             Description of the active scope constraint, or that no constraint is set.
         """
@@ -41,6 +46,9 @@ def register(mcp: FastMCP) -> None:
     @mcp.tool()
     async def clear_scope(ctx: Context) -> str:
         """Remove the scope constraint, allowing commands to all DALI addresses.
+
+        This affects subsequent MCP tool calls only; it does not change
+        controller configuration.
 
         Returns:
             Confirmation that the scope constraint has been cleared.

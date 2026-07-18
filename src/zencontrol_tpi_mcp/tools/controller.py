@@ -13,8 +13,12 @@ def register(mcp: FastMCP) -> None:
     async def get_controller_info(ctx: Context) -> str:
         """Get ZenControl controller label, firmware version, fitting number, and status.
 
+        Use this as a lightweight connectivity and health check before running
+        larger discovery tools.
+
         Returns a summary of the controller's identity and operational state,
-        including whether the DALI startup sequence is complete.
+        including label, firmware version, fitting number, startup completion,
+        and whether the DALI line is ready.
         """
         tpi = get_tpi(ctx)
         label = await commands.query_controller_label(tpi)
