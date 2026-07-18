@@ -142,18 +142,17 @@ class TestSendBasic:
         assert response.is_answer
         assert response.data == b"Office"
 
-    async def test_concurrent_requests_matched_by_seq(self):
+    async def test_concurrent_requests_are_serialized(self):
         reader = FakeStreamReader()
         writer = FakeStreamWriter()
         client = await _make_client_with_streams(reader, writer)
 
-        # Send two requests concurrently, respond out-of-order
+        # Concurrent callers are serialized onto one TCP stream.
         async def feed_responses():
             await asyncio.sleep(0.02)
-            # Respond to seq=1 first, then seq=0
-            reader.feed(_make_response(RESPONSE_ANSWER, seq=1, data=b"B"))
-            await asyncio.sleep(0.01)
             reader.feed(_make_response(RESPONSE_ANSWER, seq=0, data=b"A"))
+            await asyncio.sleep(0.01)
+            reader.feed(_make_response(RESPONSE_ANSWER, seq=1, data=b"B"))
 
         asyncio.create_task(feed_responses())
 

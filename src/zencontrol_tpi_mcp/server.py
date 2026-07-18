@@ -87,7 +87,7 @@ async def _lifespan(app: FastMCP) -> AsyncIterator[dict]:  # type: ignore[type-a
     try:
         await tpi.connect()
         logger.info("Connected to ZenControl TPI at %s:%d", host, port)
-    except OSError as exc:
+    except (OSError, TimeoutError) as exc:
         logger.error(
             "Cannot connect to ZenControl controller at %s:%d — %s\n"
             "Check ZENCONTROL_TPI_HOST and ZENCONTROL_TPI_PORT.",

@@ -64,6 +64,7 @@ class ZenControlTPI:
         self._seq: int = 0
         self._seq_lock = asyncio.Lock()
         self._connect_lock = asyncio.Lock()
+        self._send_lock = asyncio.Lock()
         self._auto_reconnect = False
 
     async def connect(self) -> None:
@@ -75,7 +76,9 @@ class ZenControlTPI:
     async def _connect_unlocked(self) -> None:
         """Open a fresh TCP connection. Caller must hold _connect_lock."""
         await self._close_unlocked()
-        self._reader, self._writer = await asyncio.open_connection(self._host, self._port)
+        self._reader, self._writer = await asyncio.wait_for(
+            asyncio.open_connection(self._host, self._port), timeout=self._timeout
+        )
         self._read_task = asyncio.create_task(self._read_loop(), name="tpi-read-loop")
         logger.info("Connected to TPI at %s:%d", self._host, self._port)
 
@@ -207,17 +210,16 @@ class ZenControlTPI:
             raise
 
     async def _send_frame(self, frame: bytes, seq: int) -> TPIResponse:
-        """Write a frame, reconnecting once if the persistent socket is stale."""
-        await self._ensure_connected()
-        try:
-            return await self._send_frame_once(frame, seq)
-        except (ConnectionError, OSError, TimeoutError) as exc:
-            if not self._auto_reconnect:
+        """Write a frame, reconnecting only before a request is sent."""
+        async with self._send_lock:
+            await self._ensure_connected()
+            try:
+                return await self._send_frame_once(frame, seq)
+            except (ConnectionError, OSError, TimeoutError):
+                if self._auto_reconnect:
+                    async with self._connect_lock:
+                        await self._close_unlocked()
                 raise
-            logger.warning("TPI request failed; reconnecting and retrying once: %s", exc)
-            async with self._connect_lock:
-                await self._connect_unlocked()
-            return await self._send_frame_once(frame, seq)
 
     async def send_basic(
         self,
