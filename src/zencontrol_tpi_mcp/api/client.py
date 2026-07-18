@@ -63,15 +63,30 @@ class ZenControlTPI:
         self._read_task: asyncio.Task[None] | None = None
         self._seq: int = 0
         self._seq_lock = asyncio.Lock()
+        self._connect_lock = asyncio.Lock()
+        self._auto_reconnect = False
 
     async def connect(self) -> None:
         """Open the TCP connection and start the background read loop."""
+        async with self._connect_lock:
+            self._auto_reconnect = True
+            await self._connect_unlocked()
+
+    async def _connect_unlocked(self) -> None:
+        """Open a fresh TCP connection. Caller must hold _connect_lock."""
+        await self._close_unlocked()
         self._reader, self._writer = await asyncio.open_connection(self._host, self._port)
         self._read_task = asyncio.create_task(self._read_loop(), name="tpi-read-loop")
         logger.info("Connected to TPI at %s:%d", self._host, self._port)
 
     async def close(self) -> None:
         """Close the TCP connection and cancel the background read loop."""
+        async with self._connect_lock:
+            await self._close_unlocked()
+        logger.info("Disconnected from TPI")
+
+    async def _close_unlocked(self) -> None:
+        """Close the current TCP connection. Caller must hold _connect_lock."""
         if self._read_task and not self._read_task.done():
             self._read_task.cancel()
             try:
@@ -86,7 +101,25 @@ class ZenControlTPI:
                 pass
         self._reader = None
         self._writer = None
-        logger.info("Disconnected from TPI")
+
+    def _has_active_connection(self) -> bool:
+        """Return True when the socket and read loop are both usable."""
+        return (
+            self._writer is not None
+            and not self._writer.is_closing()
+            and self._read_task is not None
+            and not self._read_task.done()
+        )
+
+    async def _ensure_connected(self) -> None:
+        """Reconnect if the socket or read loop has gone stale."""
+        if self._has_active_connection():
+            return
+        async with self._connect_lock:
+            if self._has_active_connection():
+                return
+            logger.info("Reconnecting to TPI at %s:%d", self._host, self._port)
+            await self._connect_unlocked()
 
     async def _next_seq(self) -> int:
         """Atomically increment and return the next sequence counter (0–255, wrapping)."""
@@ -151,7 +184,7 @@ class ZenControlTPI:
                     fut.set_exception(ConnectionError("TPI connection lost"))
             self._pending.clear()
 
-    async def _send_frame(self, frame: bytes, seq: int) -> TPIResponse:
+    async def _send_frame_once(self, frame: bytes, seq: int) -> TPIResponse:
         """Write a frame to the socket and await the matching response."""
         if self._writer is None:
             raise ConnectionError("Not connected to TPI")
@@ -172,6 +205,19 @@ class ZenControlTPI:
         except Exception:
             self._pending.pop(seq, None)
             raise
+
+    async def _send_frame(self, frame: bytes, seq: int) -> TPIResponse:
+        """Write a frame, reconnecting once if the persistent socket is stale."""
+        await self._ensure_connected()
+        try:
+            return await self._send_frame_once(frame, seq)
+        except (ConnectionError, OSError, TimeoutError) as exc:
+            if not self._auto_reconnect:
+                raise
+            logger.warning("TPI request failed; reconnecting and retrying once: %s", exc)
+            async with self._connect_lock:
+                await self._connect_unlocked()
+            return await self._send_frame_once(frame, seq)
 
     async def send_basic(
         self,
@@ -278,4 +324,4 @@ class ZenControlTPI:
 
     @property
     def is_connected(self) -> bool:
-        return self._writer is not None and not self._writer.is_closing()
+        return self._has_active_connection()
