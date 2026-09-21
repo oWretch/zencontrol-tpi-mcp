@@ -115,8 +115,7 @@ passed as part of every request packet. Store it in the environment:
 
 ```
 ZENCONTROL_TPI_HOST=192.168.1.100    # controller IP or hostname
-ZENCONTROL_TPI_PORT=52100            # default TPI port (confirm with ZenControl docs)
-ZENCONTROL_TPI_API_KEY=<key>         # issued by the ZenControl controller
+ZENCONTROL_TPI_PORT=5108             # default TPI port
 ```
 
 **Never** hardcode keys in source. Read them with `os.environ.get(...)` and

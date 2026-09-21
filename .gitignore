@@ -32,4 +32,3 @@ htmlcov/
 # Logs
 *.log
 .env.test
-.mcp.json
