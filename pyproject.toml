@@ -1,6 +1,6 @@
 [project]
 name = "zencontrol-tpi-mcp"
-version = "0.1.0"
+version = "1.0.0"
 description = "MCP server for ZenControl DALI-2 lighting control via the Third-Party Interface"
 readme = "README.md"
 authors = [
@@ -84,7 +84,7 @@ known-first-party = ["zencontrol_tpi_mcp"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.1.0"
+version = "1.0.0"
 version_files = [
     "src/zencontrol_tpi_mcp/__init__.py:__version__",
     "pyproject.toml:version",
