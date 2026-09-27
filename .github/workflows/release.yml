@@ -15,18 +15,18 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.11"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
       - name: Install dependencies
         run: uv sync
@@ -74,7 +74,7 @@ jobs:
       - name: Create GitHub App token (optional)
         if: steps.version_check.outputs.changed == 'true' && vars.APP_CLIENT_ID != ''
         id: app_token
-        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
@@ -100,12 +100,12 @@ jobs:
 
       - name: Publish to PyPI
         if: steps.version_check.outputs.changed == 'true'
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
 
       - name: Create signed release commit and tag
         if: steps.version_check.outputs.changed == 'true'
         id: signed_release
-        uses: oWretch/create-verified-commits@14dc164a60636d571258c5237e35de35c5930a08 # v1.0.1
+        uses: oWretch/create-verified-commits@d1bb1075043fd3e5ca12b7d106c051bf1951b208 # v1.1.1
         with:
           token: ${{ steps.release_token.outputs.token }}
           commit-message: ${{ steps.release_meta.outputs.commit_message }}
