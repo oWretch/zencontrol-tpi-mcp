@@ -69,7 +69,9 @@ class FakeStreamWriter:
         return self._closed
 
 
-async def _make_client_with_streams(reader: FakeStreamReader, writer: FakeStreamWriter) -> ZenControlTPI:
+async def _make_client_with_streams(
+    reader: FakeStreamReader, writer: FakeStreamWriter
+) -> ZenControlTPI:
     """Create a ZenControlTPI client pre-wired with fake streams."""
     client = ZenControlTPI(host="127.0.0.1", port=5108)
     client._reader = reader  # type: ignore[assignment]
