@@ -40,15 +40,9 @@ async def confirm_broad_command(ctx: Context, description: str) -> bool:
                 f"{description}\n\n"
                 "This will affect all lights/devices in scope. Do you want to proceed?"
             ),
-            schema={
-                "type": "object",
-                "properties": {"confirm": {"type": "boolean"}},
-                "required": ["confirm"],
-            },
+            response_type=None,
         )
-        if result.action == "accept" and result.data:
-            return bool(result.data.get("confirm", False))
-        return False
+        return result.action == "accept"
     except Exception:
         # If elicitation is not supported (e.g. non-interactive client), default to False
         return False
